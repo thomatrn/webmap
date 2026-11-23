@@ -1,0 +1,24 @@
+# Base Postgres pour le dev local uniquement (`pnpm db:up`).
+# La stack de production (Dokploy) est dans docker-compose.prod.yml.
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      # Identifiants de dev local uniquement — doivent correspondre à DATABASE_URL dans .env
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: webmap
+    ports:
+      # 5433 pour ne pas entrer en conflit avec la base de compta-illegal (5432)
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d webmap"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:

@@ -1,26 +1,81 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #0a0a0a;
+  color: #e5e5e5;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* ---------- Icônes de la carte ---------- */
+.wm-marker {
+  background: none;
+  border: none;
+  filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.7));
+  /* Jamais de transition sur transform : Leaflet positionne l'icône avec, elle "glisserait" en retard au zoom. */
+  transition: filter 120ms ease;
+}
+.wm-marker svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.wm-marker:hover {
+  filter: drop-shadow(0 0 4px rgb(250 204 21 / 0.8));
+}
+.wm-marker--selected {
+  filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 6px rgb(250 204 21 / 0.9));
+}
+
+/* ---------- Tooltips / popups ---------- */
+.leaflet-tooltip.wm-tooltip {
+  background: rgb(23 23 23 / 0.92);
+  color: #fafafa;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 8px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.4);
+}
+.leaflet-tooltip.wm-tooltip::before {
+  display: none;
+}
+/* Infobulle riche au survol : nom + type + description, texte sur plusieurs lignes */
+.leaflet-tooltip.wm-tooltip--info {
+  white-space: normal;
+  font-weight: 400;
+  padding: 8px 11px;
+  border-radius: 10px;
+}
+.wm-popup .leaflet-popup-content-wrapper,
+.wm-popup .leaflet-popup-tip {
+  background: rgb(23 23 23 / 0.96);
+  color: #fafafa;
+  border: 1px solid rgb(255 255 255 / 0.1);
+}
+.wm-popup .leaflet-popup-content {
+  margin: 10px 12px;
+}
+.wm-popup a.leaflet-popup-close-button {
+  color: #a3a3a3;
+}
+
+/* Contrôles de zoom en sombre */
+.leaflet-bar a {
+  background: rgb(23 23 23 / 0.9) !important;
+  color: #e5e5e5 !important;
+  border-color: rgb(255 255 255 / 0.1) !important;
+}
+.leaflet-bar a:hover {
+  background: rgb(38 38 38) !important;
+}
+.leaflet-container {
+  font-family: inherit;
+}
+.leaflet-image-layer {
+  image-rendering: auto;
 }

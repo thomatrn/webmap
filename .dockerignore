@@ -1,0 +1,17 @@
+node_modules
+.next
+.git
+.github
+.claude
+.env
+.env.*
+prisma/*.db
+prisma/*.db-journal
+prisma/*.backup
+assets
+public/map.svg
+docker-compose.yml
+docker-compose.prod.yml
+README.md
+npm-debug.log*
+.DS_Store
