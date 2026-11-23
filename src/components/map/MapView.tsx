@@ -67,6 +67,8 @@ export default function MapView({
         bounds={bounds}
         tileSize={256}
         minNativeZoom={0}
+        // Par défaut TileLayer disparaît sous le zoom 0 : on garde les tuiles du niveau 0 (réduites) en dessous.
+        minZoom={-10}
         maxNativeZoom={size.maxNativeZoom}
         noWrap
         keepBuffer={4}

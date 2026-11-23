@@ -7,6 +7,16 @@ import { SmoothWheelZoom } from "./smooth-wheel-zoom";
 
 /** Crans de zoom ajoutés à l'arrivée sur la carte (1 = x2). */
 const INITIAL_ZOOM_BOOST = 1.75;
+/** Dézoom max autorisé au-delà de "toute la carte visible" (0 = carte entière, 0.5 = un peu plus loin). */
+const ZOOM_OUT_MARGIN = -0.75;
+
+/** Dézoom limité : on ne peut pas aller plus loin que la vue où la carte entière tient à l'écran. */
+function applyMinZoom(map: L.Map, bounds: L.LatLngBoundsExpression) {
+  const size = map.getSize();
+  if (size.x === 0 || size.y === 0) return; // carte cachée : on recalculera au prochain redimensionnement
+  const fit = map.getBoundsZoom(bounds);
+  if (Number.isFinite(fit)) map.setMinZoom(fit - ZOOM_OUT_MARGIN);
+}
 
 /**
  * Remplace <MapContainer> de react-leaflet.
@@ -39,6 +49,7 @@ export default function StableMapContainer({
       const map = L.map(div, { ...options, scrollWheelZoom: false });
       new SmoothWheelZoom(map).enable();
       map.fitBounds(bounds);
+      applyMinZoom(map, bounds);
       // Zoom par défaut un peu plus serré que "toute la carte visible".
       map.setZoom(map.getZoom() + INITIAL_ZOOM_BOOST, { animate: false });
       mapRef.current = map;
@@ -46,7 +57,12 @@ export default function StableMapContainer({
       setContext(createLeafletContext(map));
     }
     // La carte peut avoir été cachée (taille 0) : on recalcule sa taille quand elle réapparaît.
-    const ro = new ResizeObserver(() => mapRef.current?.invalidateSize());
+    const ro = new ResizeObserver(() => {
+      const map = mapRef.current;
+      if (!map) return;
+      map.invalidateSize();
+      applyMinZoom(map, bounds);
+    });
     ro.observe(div);
     return () => {
       ro.disconnect();
