@@ -6,8 +6,8 @@ Next.js 16 · React 19 · Leaflet (+ Geoman pour dessiner) · Prisma + Postgres 
 
 ```bash
 pnpm install
-cp .env.example .env        # puis remplir SESSION_SECRET (openssl rand -hex 32) et le mot de passe admin
-pnpm run db:setup           # lance Postgres (Docker, port 5433), applique les migrations, crée l'admin du .env
+cp .env.example .env        # puis remplir SESSION_SECRET (openssl rand -hex 32) et les variables Discord
+pnpm run db:setup           # lance Postgres (Docker, port 5433) et applique les migrations
 pnpm dev
 ```
 
@@ -45,11 +45,20 @@ Zoom à l'arrivée sur le site : `INITIAL_ZOOM_BOOST` dans `src/components/map/S
   Les icônes se déplacent par glisser-déposer (sauvegarde auto).
 - `Échap` pour revenir en mode sélection.
 
-## Comptes admin
+## Connexion Discord
 
-```bash
-pnpm run admin:create <identifiant> <mot_de_passe>   # crée ou change le mot de passe
-```
+Les admins se connectent avec Discord (OAuth2). Accès accordé seulement si le compte est **membre du serveur**
+`DISCORD_GUILD_ID` **et** possède **au moins un** des rôles de `DISCORD_ALLOWED_ROLES`.
+Les rôles sont revérifiés toutes les 10 minutes : un rôle retiré ou un kick coupe l'accès sans attendre.
+
+1. https://discord.com/developers/applications → *New Application* → **OAuth2**
+2. Copier *Client ID* → `AUTH_DISCORD_ID`, *Client Secret* → `AUTH_DISCORD_SECRET`
+3. **Redirects** : ajouter `https://<ton-domaine>/api/auth/discord/callback`
+   (et `http://localhost:3000/api/auth/discord/callback` pour le dev)
+4. Dans Discord (mode développeur activé) : clic droit sur le serveur / les rôles → *Copier l'identifiant*
+   → `DISCORD_GUILD_ID` et `DISCORD_ALLOWED_ROLES` (séparés par des virgules)
+
+Aucun bot n'est nécessaire : la vérification utilise le scope `guilds.members.read` du compte connecté.
 
 ## Logs
 
@@ -60,7 +69,7 @@ action (l'annulation est elle-même loggée).
 ## Structure
 
 ```
-prisma/schema.prisma          Modèles Zone, Marker, AuditLog, AdminUser
+prisma/schema.prisma          Modèles Zone, Marker, AuditLog
 src/app/api/*                 Routes API (toutes les écritures exigent une session admin)
 src/components/map/           MapView (Leaflet), AdminTools (Geoman), icônes
 src/components/admin/         Panel admin, logs, login
@@ -72,11 +81,11 @@ src/proxy.ts                  Redirection /admin → /login si pas connecté
 1. Dans Dokploy : **Create Service → Compose**, source = ce dépôt GitHub, branche `main`.
 2. **Compose Path** : `./docker-compose.prod.yml`
 3. **Environment** : renseigner les variables de `.env.prod.example`
-   (`DB_PASSWORD`, `SESSION_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`).
+   (`DB_PASSWORD`, `SESSION_SECRET`, `AUTH_DISCORD_*`, `DISCORD_*`, `APP_URL`).
 4. **Domains** : ajouter ton domaine sur le service `app`, port `3000`, HTTPS activé.
 5. **Deploy**.
 
-Au démarrage, le conteneur applique les migrations Prisma puis crée/met à jour le compte admin.
+Au démarrage, le conteneur applique les migrations Prisma.
 La base Postgres est dans le volume `db-data` (persistant) et n'est pas exposée à l'extérieur.
 
 ### Reprendre les données de l'ancienne base SQLite

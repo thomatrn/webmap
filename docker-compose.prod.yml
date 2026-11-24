@@ -2,7 +2,7 @@
 #
 # Dans Dokploy :
 #   - Compose Path : ./docker-compose.prod.yml
-#   - Environment  : voir .env.prod.example (DB_PASSWORD, SESSION_SECRET, ADMIN_*)
+#   - Environment  : voir .env.prod.example (DB_PASSWORD, SESSION_SECRET, Discord, APP_URL)
 #   - Domains      : service "app", port 3000 (Dokploy ajoute lui-même les labels Traefik + HTTPS)
 #
 # L'image est construite par Dokploy à partir du Dockerfile du dépôt.
@@ -15,8 +15,11 @@ services:
     environment:
       DATABASE_URL: postgresql://webmap:${DB_PASSWORD}@db:5432/webmap
       SESSION_SECRET: ${SESSION_SECRET}
-      ADMIN_USERNAME: ${ADMIN_USERNAME:-}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      AUTH_DISCORD_ID: ${AUTH_DISCORD_ID}
+      AUTH_DISCORD_SECRET: ${AUTH_DISCORD_SECRET}
+      DISCORD_GUILD_ID: ${DISCORD_GUILD_ID}
+      DISCORD_ALLOWED_ROLES: ${DISCORD_ALLOWED_ROLES:-}
+      APP_URL: ${APP_URL:-}
     depends_on:
       db:
         condition: service_healthy

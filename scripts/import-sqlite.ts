@@ -20,15 +20,6 @@ async function main() {
   if (!file) throw new Error("Usage: import-sqlite.ts <export.json>");
   const data = JSON.parse(readFileSync(file, "utf8")) as Record<string, Row[]>;
 
-  const users = await prisma.adminUser.createMany({
-    skipDuplicates: true,
-    data: data.AdminUser.map((r) => ({
-      id: String(r.id),
-      username: String(r.username),
-      passwordHash: String(r.passwordHash),
-      createdAt: date(r.createdAt),
-    })),
-  });
   const zones = await prisma.zone.createMany({
     skipDuplicates: true,
     data: data.Zone.map((r) => ({
@@ -72,7 +63,7 @@ async function main() {
       createdAt: date(r.createdAt),
     })),
   });
-  console.log(`✔ importé : ${users.count} admin(s), ${zones.count} zone(s), ${markers.count} icône(s), ${logs.count} log(s)`);
+  console.log(`✔ importé : ${zones.count} zone(s), ${markers.count} icône(s), ${logs.count} log(s)`);
 }
 
 main().finally(() => prisma.$disconnect());

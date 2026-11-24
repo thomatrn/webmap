@@ -7,13 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model AdminUser {
-  id           String   @id @default(cuid())
-  username     String   @unique
-  passwordHash String
-  createdAt    DateTime @default(now())
-}
-
 /// Zone colorée dessinée sur la carte. `points` = JSON [[x,y],...] en coordonnées SVG.
 model Zone {
   id          String   @id @default(cuid())

@@ -1,18 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { jwtVerify } from "jose";
+import { SESSION_COOKIE, decryptSession } from "@/lib/session-crypto";
 
 // Vérification "optimiste" : redirige vers /login si pas de session valide.
-// Les routes API revérifient la session elles-mêmes (requireAdmin).
+// Les pages admin et les routes API revérifient la session (et les rôles Discord) elles-mêmes.
 export async function proxy(request: NextRequest) {
-  const token = request.cookies.get("webmap_session")?.value;
-  let ok = false;
-  if (token && process.env.SESSION_SECRET) {
-    try {
-      await jwtVerify(token, new TextEncoder().encode(process.env.SESSION_SECRET));
-      ok = true;
-    } catch {}
-  }
-  if (!ok) {
+  const session = await decryptSession(request.cookies.get(SESSION_COOKIE)?.value);
+  if (!session) {
     const url = new URL("/login", request.url);
     url.searchParams.set("next", request.nextUrl.pathname);
     return NextResponse.redirect(url);
