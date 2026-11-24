@@ -19,6 +19,7 @@ export type MarkerDTO = {
   description: string;
   type: MarkerType;
   linkedGarage: boolean;
+  labels: string[];
   x: number;
   y: number;
   updatedAt: string;

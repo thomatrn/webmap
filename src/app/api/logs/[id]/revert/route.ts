@@ -37,7 +37,7 @@ export const POST = handle(async (_req: Request, ctx: RouteContext<"/api/logs/[i
       const current = await tx.marker.findUnique({ where: { id: log.entityId } });
       if (target) {
         const t = target as MarkerDTO;
-        const data = { name: t.name, description: t.description, type: t.type, linkedGarage: t.linkedGarage ?? false, x: t.x, y: t.y };
+        const data = { name: t.name, description: t.description, type: t.type, linkedGarage: t.linkedGarage ?? false, labels: t.labels ?? [], x: t.x, y: t.y };
         const m = await tx.marker.upsert({ where: { id: log.entityId }, create: { id: log.entityId, ...data }, update: data });
         await writeLog(tx, { action: "REVERT", entityType: "MARKER", entityId: m.id, actor: username, before: current ? markerToDTO(current) : undefined, after: markerToDTO(m) });
       } else if (current) {

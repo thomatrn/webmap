@@ -36,6 +36,7 @@ const FIELD_LABELS: Record<string, string> = {
   points: "forme",
   type: "type",
   linkedGarage: "garage lié",
+  labels: "labels",
   x: "position",
   y: "position",
 };
@@ -58,6 +59,7 @@ function diff(log: Log): string[] {
 
 function fmtValue(k: string, v: unknown) {
   if (k === "points" && Array.isArray(v)) return `${v.length} points`;
+  if (k === "labels" && Array.isArray(v)) return v.length ? v.join(", ") : "—";
   if (k === "type") return MARKER_LABELS[v as MarkerType] ?? String(v);
   if (typeof v === "boolean") return v ? "oui" : "non";
   if (typeof v === "number") return String(Math.round(v * 100) / 100);

@@ -31,6 +31,7 @@ const markerBase = z.object({
   description: z.string().max(5000),
   type: z.enum(MARKER_TYPES),
   linkedGarage: z.boolean(),
+  labels: z.array(z.string().trim().min(1).max(120)).max(300),
   x: z.number().finite(),
   y: z.number().finite(),
 });
@@ -40,5 +41,6 @@ export const markerCreateSchema = markerBase.extend({
   description: markerBase.shape.description.default(""),
   type: markerBase.shape.type.default("house"),
   linkedGarage: markerBase.shape.linkedGarage.default(false),
+  labels: markerBase.shape.labels.default([]),
 });
 export const markerUpdateSchema = markerBase.partial();

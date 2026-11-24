@@ -10,6 +10,7 @@ import { MARKER_SVG } from "../map/icons-svg";
 import type { ShapeMode, Tool } from "../map/AdminTools";
 import { api, logout } from "./api-client";
 import { Button, Field, Input, Textarea } from "./ui";
+import LabelPicker from "./LabelPicker";
 
 // Geoman doit être chargé AVANT la création de la carte (il s'accroche à L.Map via un init hook).
 const MapView = dynamic(
@@ -47,6 +48,7 @@ const markerFields = (m: MarkerDTO) => ({
   type: m.type,
   // "Garage lié" n'a de sens que pour garages / immeubles
   linkedGarage: LINKED_GARAGE_TYPES.includes(m.type) && m.linkedGarage,
+  labels: m.labels,
 });
 
 export default function AdminMap({ size, initialZones, initialMarkers, username }: Props) {
@@ -489,7 +491,19 @@ export default function AdminMap({ size, initialZones, initialMarkers, username 
                   ))}
                 </div>
               </Field>
-              <Field label="Description">
+              {/* div et pas <Field> (= <label>) : un <label> autour de plusieurs contrôles déclencherait le premier au clic */}
+              <div>
+                <span className="mb-1 flex items-center justify-between text-xs font-medium text-neutral-400">
+                  Labels
+                  <span className="text-neutral-500">
+                    {markerDraft.labels.length
+                      ? `${markerDraft.labels.length} coché${markerDraft.labels.length > 1 ? "s" : ""}`
+                      : "affichés au survol"}
+                  </span>
+                </span>
+                <LabelPicker value={markerDraft.labels} onChange={(labels) => setMarkerDraft({ ...markerDraft, labels })} />
+              </div>
+              <Field label="Description" hint="affichée après les labels">
                 <Textarea rows={3} value={markerDraft.description} onChange={(e) => setMarkerDraft({ ...markerDraft, description: e.target.value })} />
               </Field>
               {LINKED_GARAGE_TYPES.includes(markerDraft.type) && (

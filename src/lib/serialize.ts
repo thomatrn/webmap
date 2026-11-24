@@ -23,6 +23,7 @@ export function markerToDTO(m: Marker): MarkerDTO {
     description: m.description,
     type: m.type as MarkerType,
     linkedGarage: m.linkedGarage,
+    labels: m.labels,
     x: m.x,
     y: m.y,
     updatedAt: m.updatedAt.toISOString(),

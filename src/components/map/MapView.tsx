@@ -2,10 +2,11 @@
 
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { useMemo, type ReactNode } from "react";
-import { Marker, TileLayer, Polygon, Tooltip, ZoomControl } from "react-leaflet";
+import { useMemo, useRef, useState, type ReactNode } from "react";
+import { Marker, Popup, TileLayer, Polygon, Tooltip, ZoomControl } from "react-leaflet";
 import type { MapSize, MarkerDTO, ZoneDTO } from "@/lib/types";
 import { LINKED_GARAGE_TYPES, MARKER_LABELS } from "@/lib/types";
+import { sortLabels } from "@/lib/catalog";
 import { mapBounds, toLatLng, zoneStyle } from "./coords";
 import { markerIcon } from "./icons";
 import "./leaflet-patches";
@@ -100,34 +101,14 @@ export default function MapView({
         ))}
 
       {markers.map((m) => (
-        <Marker
+        <HoverMarker
           key={`${m.id}:${m.updatedAt}`}
-          position={toLatLng([m.x, m.y])}
-          icon={markerIcon(m.type, m.id === selectedId)}
-          draggable={admin}
-          zIndexOffset={m.id === selectedId ? 1000 : 0}
-          eventHandlers={{
-            click: () => onMarkerClick?.(m),
-            dragend: (e) => {
-              const ll = (e.target as L.Marker).getLatLng();
-              onMarkerDragEnd?.(m, Math.round(ll.lng * 100) / 100, Math.round(-ll.lat * 100) / 100);
-            },
-          }}
-        >
-          {/* Infos au survol (nom, type, description) */}
-          <Tooltip direction="top" className="wm-tooltip wm-tooltip--info">
-            <InfoBody
-              title={m.name || MARKER_LABELS[m.type]}
-              subtitle={m.name ? MARKER_LABELS[m.type] : undefined}
-              body={m.description}
-              mention={
-                LINKED_GARAGE_TYPES.includes(m.type) && m.linkedGarage
-                  ? { text: "Garage lié", color: m.type === "building" ? "#4ade80" : "#f87171" }
-                  : undefined
-              }
-            />
-          </Tooltip>
-        </Marker>
+          m={m}
+          admin={admin}
+          selected={m.id === selectedId}
+          onClick={onMarkerClick}
+          onDragEnd={onMarkerDragEnd}
+        />
       ))}
 
       {children}
@@ -160,6 +141,132 @@ function InfoBody({
       {mention && (
         <div className="mt-2 text-[13px] font-semibold" style={{ color: mention.color }}>
           {mention.text}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Délai avant fermeture quand la souris quitte l'icône (le temps d'aller sur la carte d'infos). */
+const HOVER_CLOSE_MS = 200;
+/** Au-delà, la carte d'infos est repliée avec un bouton "Voir plus". */
+const MAX_LINES = 8;
+
+/**
+ * Icône + carte d'infos au survol. C'est un Popup (et pas un Tooltip) pour pouvoir cliquer dedans
+ * ("Voir plus") : il reste ouvert tant que la souris est sur l'icône OU sur la carte.
+ */
+function HoverMarker({
+  m,
+  admin,
+  selected,
+  onClick,
+  onDragEnd,
+}: {
+  m: MarkerDTO;
+  admin: boolean;
+  selected: boolean;
+  onClick?: (m: MarkerDTO) => void;
+  onDragEnd?: (m: MarkerDTO, x: number, y: number) => void;
+}) {
+  const markerRef = useRef<L.Marker | null>(null);
+  const closeTimer = useRef<number | undefined>(undefined);
+  const [expanded, setExpanded] = useState(false);
+
+  const cancelClose = () => window.clearTimeout(closeTimer.current);
+  const scheduleClose = () => {
+    cancelClose();
+    closeTimer.current = window.setTimeout(() => markerRef.current?.closePopup(), HOVER_CLOSE_MS);
+  };
+  const open = () => {
+    cancelClose();
+    markerRef.current?.openPopup();
+  };
+
+  return (
+    <Marker
+      ref={markerRef}
+      position={toLatLng([m.x, m.y])}
+      icon={markerIcon(m.type, selected)}
+      draggable={admin}
+      zIndexOffset={selected ? 1000 : 0}
+      eventHandlers={{
+        mouseover: open,
+        mouseout: scheduleClose,
+        click: () => {
+          onClick?.(m);
+          // Leaflet bascule le popup au clic sur l'icône : on le garde ouvert
+          window.setTimeout(open, 0);
+        },
+        dragstart: () => markerRef.current?.closePopup(),
+        dragend: (e) => {
+          const ll = (e.target as L.Marker).getLatLng();
+          onDragEnd?.(m, Math.round(ll.lng * 100) / 100, Math.round(-ll.lat * 100) / 100);
+        },
+        popupopen: (e) => {
+          const el = (e as L.PopupEvent).popup.getElement();
+          if (el) {
+            el.onmouseenter = cancelClose;
+            el.onmouseleave = scheduleClose;
+          }
+        },
+        popupclose: () => setExpanded(false),
+      }}
+    >
+      <Popup className="wm-popup wm-hovercard" closeButton={false} autoPan={false} offset={[0, -24]} maxWidth={300}>
+        <MarkerCard m={m} expanded={expanded} onToggle={() => setExpanded((v) => !v)} />
+      </Popup>
+    </Marker>
+  );
+}
+
+function MarkerCard({ m, expanded, onToggle }: { m: MarkerDTO; expanded: boolean; onToggle: () => void }) {
+  // Lignes affichées : labels cochés (ordre du catalogue), puis description saisie à la main (toujours en dernier).
+  const descLines = m.description.trim() ? m.description.trim().split("\n") : [];
+  const allLabels = sortLabels(m.labels);
+  const total = allLabels.length + descLines.length;
+  const budget = expanded ? Infinity : MAX_LINES;
+  const labels = allLabels.slice(0, budget);
+  const desc = descLines.slice(0, Math.max(0, budget - labels.length));
+  const hidden = total - labels.length - desc.length;
+  const linked = LINKED_GARAGE_TYPES.includes(m.type) && m.linkedGarage;
+
+  return (
+    <div className="min-w-44">
+      <strong className="text-sm">{m.name || MARKER_LABELS[m.type]}</strong>
+      {m.name && <div className="mt-0.5 text-xs uppercase tracking-wide text-neutral-400">{MARKER_LABELS[m.type]}</div>}
+
+      {(labels.length > 0 || desc.length > 0) && (
+        <div className={`mt-2 space-y-1.5 ${expanded ? "max-h-72 overflow-y-auto pr-1" : ""}`}>
+          {labels.length > 0 && (
+            <ul className="space-y-0.5 text-[13px] text-neutral-100">
+              {labels.map((l) => (
+                <li key={l} className="flex gap-1.5">
+                  <span className="text-yellow-400">•</span>
+                  {l}
+                </li>
+              ))}
+            </ul>
+          )}
+          {desc.length > 0 && (
+            <p className="whitespace-pre-wrap text-[13px] leading-snug text-neutral-300">{desc.join("\n")}</p>
+          )}
+        </div>
+      )}
+
+      {(hidden > 0 || (expanded && total > MAX_LINES)) && (
+        <button
+          type="button"
+          onClick={onToggle}
+          className="mt-1.5 text-xs font-semibold text-yellow-300 hover:text-yellow-200"
+        >
+          {expanded ? "Voir moins" : `Voir plus (+${hidden})`}
+        </button>
+      )}
+
+      {linked && (
+        <div className="mt-2 text-[13px] font-semibold" style={{ color: m.type === "building" ? "#4ade80" : "#f87171" }}>
+          Garage lié
         </div>
       )}
     </div>
