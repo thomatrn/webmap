@@ -4,6 +4,20 @@
   color-scheme: dark;
 }
 
+/* Tailwind v4 ne met plus cursor: pointer sur les boutons par défaut : on le remet partout. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  select,
+  label:has(> input[type="checkbox"]:not(:disabled)),
+  input[type="checkbox"]:not(:disabled),
+  input[type="color"],
+  input[type="range"] {
+    cursor: pointer;
+  }
+}
+
 body {
   background: #0a0a0a;
   color: #e5e5e5;

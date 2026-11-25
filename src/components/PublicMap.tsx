@@ -6,8 +6,11 @@ import { useMemo, useState } from "react";
 import type { MapSize, MarkerDTO, MarkerType, ZoneDTO } from "@/lib/types";
 import { MARKER_LABELS, MARKER_TYPES } from "@/lib/types";
 import { MARKER_SVG } from "./map/icons-svg";
+import InteriorSearch from "./InteriorSearch";
+import type { FocusRequest } from "./map/MapFocus";
 
 const MapView = dynamic(() => import("./map/MapView"), { ssr: false, loading: () => <MapLoading /> });
+const MapFocus = dynamic(() => import("./map/MapFocus"), { ssr: false });
 
 export function MapLoading() {
   return <div className="grid h-full w-full place-items-center bg-[#1b1b1b] text-neutral-500">Chargement de la carte…</div>;
@@ -27,6 +30,9 @@ export default function PublicMap({
   const [hiddenTypes, setHiddenTypes] = useState<Set<MarkerType>>(new Set());
   const [hiddenCats, setHiddenCats] = useState<Set<string>>(new Set());
   const [panelOpen, setPanelOpen] = useState(true);
+  const [interior, setInterior] = useState<string | null>(null);
+  const [pickedId, setPickedId] = useState<string | null>(null);
+  const [focus, setFocus] = useState<FocusRequest>(null);
 
   const categories = useMemo(() => {
     const map = new Map<string, { color: string; count: number }>();
@@ -40,7 +46,17 @@ export default function PublicMap({
   }, [zones]);
 
   const visibleZones = zones.filter((z) => !hiddenCats.has(z.category || NO_CATEGORY));
-  const visibleMarkers = markers.filter((m) => !hiddenTypes.has(m.type));
+  // Recherche d'intérieur active : on n'affiche que les points qui le proposent (les filtres de type sont ignorés)
+  const visibleMarkers = interior
+    ? markers.filter((m) => m.labels.includes(interior))
+    : markers.filter((m) => !hiddenTypes.has(m.type));
+
+  const selectInterior = (value: string | null) => {
+    setInterior(value);
+    setPickedId(null);
+    const found = value ? markers.filter((m) => m.labels.includes(value)) : [];
+    if (found.length) setFocus({ points: found.map((m) => [m.x, m.y]), key: Date.now() });
+  };
 
   const toggle = <T,>(set: Set<T>, v: T) => {
     const next = new Set(set);
@@ -51,7 +67,10 @@ export default function PublicMap({
 
   return (
     <div className="relative h-dvh w-full overflow-hidden">
-      <MapView size={size} zones={visibleZones} markers={visibleMarkers} />
+      <MapView size={size} zones={visibleZones} markers={visibleMarkers} selectedId={pickedId}>
+        <MapFocus focus={focus} />
+      </MapView>
+
 
       <div className="pointer-events-none absolute left-3 top-3 z-[1000] flex flex-col gap-2">
         <button
@@ -107,6 +126,18 @@ export default function PublicMap({
             )}
           </div>
         )}
+
+        {/* Recherche d'intérieur, sous la légende */}
+        <InteriorSearch
+          markers={markers}
+          selected={interior}
+          onSelect={selectInterior}
+          pickedId={pickedId}
+          onPick={(m) => {
+            setPickedId(m.id);
+            setFocus({ points: [[m.x, m.y]], key: Date.now() });
+          }}
+        />
       </div>
 
       <Link
