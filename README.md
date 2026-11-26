@@ -54,8 +54,8 @@ Scopes : `identify guilds.members.read`. **Aucun bot**, aucun salon utilisé.
 - Cookies de session `HttpOnly; Secure; SameSite=Lax`, contenu chiffré (il contient le jeton Discord).
 - Base : uniquement via Prisma (requêtes paramétrées), aucune requête SQL brute.
 - Aucun `child_process`, `eval`, ni appel réseau sortant autre que l'API Discord (`discord.com`).
-- Les scripts Python de `scripts/` (tuiles, île, catalogue) sont des **outils de développement** lancés à la
-  main par le développeur : ils ne tournent jamais sur le serveur. Les tuiles générées sont commitées.
+- Les outils de développement (`scripts/` : tuiles, île, catalogue) restent sur la machine du développeur et
+  ne sont pas dans le dépôt. Les fichiers qu'ils génèrent (tuiles, `src/lib/catalog.ts`) sont commités.
 
 Une variante Docker (Dokploy) existe aussi : voir *Déploiement (Dokploy)* plus bas.
 
@@ -80,7 +80,7 @@ Base locale : `pnpm db:up` / `pnpm db:down`. Après une modification de `prisma/
 La source est `public/map.svg`, mais le site affiche des **tuiles** (`public/tiles/`) générées à partir
 de ce SVG : c'est ce qui rend le zoom fluide (le SVG brut est trop lourd pour être redessiné à chaque zoom).
 
-**Après chaque modification de `public/map.svg`, régénère les tuiles :**
+**Après chaque modification de `public/map.svg`, régénère les tuiles** (script local, hors dépôt) :
 
 ```bash
 pip install pillow numpy        # une seule fois
@@ -145,10 +145,3 @@ src/proxy.ts                  Redirection /admin → /login si pas connecté
 
 Au démarrage, le conteneur applique les migrations Prisma.
 La base Postgres est dans le volume `db-data` (persistant) et n'est pas exposée à l'extérieur.
-
-### Reprendre les données de l'ancienne base SQLite
-
-```bash
-python3 scripts/export-sqlite.py prisma/dev.sqlite.backup > prisma/sqlite-export.json
-DATABASE_URL="postgresql://…" pnpm exec tsx scripts/import-sqlite.ts prisma/sqlite-export.json
-```
