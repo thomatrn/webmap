@@ -1,14 +1,15 @@
 import "server-only";
+import { publicOrigin } from "./origin";
 
 /**
  * Connexion Discord OAuth2 + vérification serveur/rôles.
  *
  * Variables d'environnement :
- *   AUTH_DISCORD_ID / AUTH_DISCORD_SECRET  application Discord (Developer Portal → OAuth2)
+ *   DISCORD_CLIENT_ID / DISCORD_CLIENT_SECRET  application Discord (fournie par l'opérateur)
  *   DISCORD_GUILD_ID                       serveur Discord dont il faut être membre
  *   DISCORD_ALLOWED_ROLES                  IDs de rôles autorisés, séparés par des virgules
  *                                          (au moins un requis ; vide = tout membre du serveur)
- *   APP_URL                                URL publique du site (pour l'URL de retour OAuth2)
+ *   SITE_URL                               URL publique du site (pour l'URL de retour OAuth2)
  */
 
 const API = "https://discord.com/api";
@@ -17,8 +18,8 @@ export const DISCORD_SCOPES = "identify guilds.members.read";
 export const OAUTH_COOKIE = "webmap_oauth";
 
 export function discordConfig() {
-  const clientId = process.env.AUTH_DISCORD_ID;
-  const clientSecret = process.env.AUTH_DISCORD_SECRET;
+  const clientId = process.env.DISCORD_CLIENT_ID || process.env.AUTH_DISCORD_ID; // AUTH_DISCORD_* : anciens noms
+  const clientSecret = process.env.DISCORD_CLIENT_SECRET || process.env.AUTH_DISCORD_SECRET;
   const guildId = process.env.DISCORD_GUILD_ID;
   const allowedRoles = (process.env.DISCORD_ALLOWED_ROLES ?? "")
     .split(",")
@@ -32,16 +33,8 @@ export function isDiscordEnabled() {
   return discordConfig() !== null;
 }
 
-/** URL publique du site : APP_URL, sinon déduite des en-têtes (proxy Traefik : x-forwarded-*). */
-export function appOrigin(req: Request): string {
-  // On ne garde que l'origine (protocole + domaine + port), même si APP_URL contient un chemin
-  // (ex: "https://site.fr/api/auth/discord/callback" → "https://site.fr").
-  if (process.env.APP_URL) return new URL(process.env.APP_URL).origin;
-  const h = req.headers;
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? new URL(req.url).host;
-  const proto = h.get("x-forwarded-proto") ?? new URL(req.url).protocol.replace(":", "");
-  return `${proto}://${host}`;
-}
+/** URL publique du site (SITE_URL) : voir src/lib/origin.ts. */
+export const appOrigin = publicOrigin;
 
 export const callbackUrl = (req: Request) => `${appOrigin(req)}/api/auth/discord/callback`;
 

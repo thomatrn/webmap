@@ -2,7 +2,8 @@ import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { DISCORD_SCOPES, OAUTH_COOKIE, appOrigin, callbackUrl, discordConfig } from "@/lib/discord";
 
-const safeNext = (n: string | null) => (n && n.startsWith("/") && !n.startsWith("//") ? n : "/admin");
+// Chemin interne uniquement : refuse "//x" et "/\x" (les navigateurs lisent \ comme /, donc vers un autre site)
+const safeNext = (n: string | null) => (n && n.startsWith("/") && !/^\/[/\\]/.test(n) ? n : "/admin");
 
 /** Démarre la connexion Discord : redirige vers la page d'autorisation Discord. */
 export async function GET(req: Request) {

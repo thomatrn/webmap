@@ -72,6 +72,10 @@ export default function MapView({
         minZoom={-10}
         maxNativeZoom={size.maxNativeZoom}
         noWrap
+        // Pendant un zoom continu (molette/flyTo), ne pas changer de niveau de tuiles à chaque zoom entier :
+        // sinon, en zoomant vite, Leaflet annule et redemande les tuiles en boucle (trous, clignotements).
+        // Les tuiles affichées sont agrandies/réduites, et le bon niveau est chargé une fois le geste fini.
+        updateWhenZooming={false}
         keepBuffer={4}
       />
       <ZoomControl position="topright" />

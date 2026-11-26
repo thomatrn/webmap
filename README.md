@@ -1,8 +1,65 @@
 # Carte interactive GTA RP
 
-Next.js 16 · React 19 · Leaflet (+ Geoman pour dessiner) · Prisma + Postgres · Tailwind 4
+Next.js 16 · React 19 · Leaflet (+ Geoman pour dessiner) · Prisma + PostgreSQL · Tailwind 4
 
-## Démarrage
+- **Node.js ≥ 20.9** (développé et testé avec Node 20) · **pnpm 10** (via `corepack enable`)
+- **PostgreSQL ≥ 14** (testé avec PostgreSQL 16)
+- Site **web uniquement** (pas d'affichage en jeu). Connexion admin **par Discord uniquement** (aucun mot de passe).
+- **Aucun envoi ni stockage de fichier** : les seules images sont celles du dépôt (carte, icônes).
+
+## Hébergement (serveur partagé, derrière un reverse proxy HTTPS)
+
+Le site tourne avec Node directement (Docker non nécessaire). Toute la configuration est dans le `.env`
+(voir `.env.example`, commenté) : rien n'est en dur dans le code.
+
+| Variable | Rôle |
+|---|---|
+| `SITE_URL` | Adresse publique, sans barre finale (ex. `https://carte.fbfa.fr`) |
+| `PORT` | Port d'écoute. Le site écoute sur `127.0.0.1:PORT` |
+| `DATABASE_URL` | Connexion PostgreSQL (base et utilisateur dédiés) |
+| `SESSION_SECRET` | Chiffrement des sessions admin : `openssl rand -hex 32` |
+| `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` | Application Discord (OAuth2) |
+| `DISCORD_GUILD_ID` | Serveur Discord dont il faut être membre |
+| `DISCORD_ALLOWED_ROLES` | IDs des rôles autorisés, séparés par des virgules (au moins un requis) |
+
+**Installation**
+
+```bash
+corepack enable
+pnpm install --frozen-lockfile   # le postinstall lance `prisma generate` (génère le client de base de données)
+pnpm db:deploy                   # applique les migrations (prisma/migrations)
+pnpm build
+pnpm start                       # écoute sur 127.0.0.1:$PORT
+```
+
+**Mise à jour**
+
+```bash
+git pull
+pnpm install --frozen-lockfile
+pnpm db:deploy
+pnpm build
+# puis redémarrer le processus (pnpm start)
+```
+
+**Discord** : callback OAuth2 à déclarer dans l'application : `<SITE_URL>/api/auth/discord/callback`.
+Scopes : `identify guilds.members.read`. **Aucun bot**, aucun salon utilisé.
+
+**Réseau et sécurité**
+
+- HTTPS géré par le reverse proxy. Les adresses absolues (redirections, URL de retour Discord) sont
+  construites depuis `SITE_URL`, jamais depuis l'adresse interne de la requête (`src/lib/origin.ts`).
+- Les routes qui modifient des données exigent une session admin **et** une origine égale à `SITE_URL`
+  (contrôle CSRF dans `src/lib/api.ts`).
+- Cookies de session `HttpOnly; Secure; SameSite=Lax`, contenu chiffré (il contient le jeton Discord).
+- Base : uniquement via Prisma (requêtes paramétrées), aucune requête SQL brute.
+- Aucun `child_process`, `eval`, ni appel réseau sortant autre que l'API Discord (`discord.com`).
+- Les scripts Python de `scripts/` (tuiles, île, catalogue) sont des **outils de développement** lancés à la
+  main par le développeur : ils ne tournent jamais sur le serveur. Les tuiles générées sont commitées.
+
+Une variante Docker (Dokploy) existe aussi : voir *Déploiement (Dokploy)* plus bas.
+
+## Développement local
 
 ```bash
 pnpm install
@@ -52,7 +109,7 @@ Les admins se connectent avec Discord (OAuth2). Accès accordé seulement si le 
 Les rôles sont revérifiés toutes les 10 minutes : un rôle retiré ou un kick coupe l'accès sans attendre.
 
 1. https://discord.com/developers/applications → *New Application* → **OAuth2**
-2. Copier *Client ID* → `AUTH_DISCORD_ID`, *Client Secret* → `AUTH_DISCORD_SECRET`
+2. Copier *Client ID* → `DISCORD_CLIENT_ID`, *Client Secret* → `DISCORD_CLIENT_SECRET`
 3. **Redirects** : ajouter `https://<ton-domaine>/api/auth/discord/callback`
    (et `http://localhost:3000/api/auth/discord/callback` pour le dev)
 4. Dans Discord (mode développeur activé) : clic droit sur le serveur / les rôles → *Copier l'identifiant*
@@ -76,12 +133,13 @@ src/components/admin/         Panel admin, logs, login
 src/proxy.ts                  Redirection /admin → /login si pas connecté
 ```
 
-## Déploiement (Dokploy, Docker Compose)
+## Déploiement (Dokploy)
 
 1. Dans Dokploy : **Create Service → Compose**, source = ce dépôt GitHub, branche `main`.
 2. **Compose Path** : `./docker-compose.prod.yml`
 3. **Environment** : renseigner les variables de `.env.prod.example`
-   (`DB_PASSWORD`, `SESSION_SECRET`, `AUTH_DISCORD_*`, `DISCORD_*`, `APP_URL`).
+   (`DB_PASSWORD`, `SESSION_SECRET`, `DISCORD_*`, `SITE_URL`).
+   Les anciens noms `AUTH_DISCORD_ID` / `AUTH_DISCORD_SECRET` / `APP_URL` restent acceptés.
 4. **Domains** : ajouter ton domaine sur le service `app`, port `3000`, HTTPS activé.
 5. **Deploy**.
 

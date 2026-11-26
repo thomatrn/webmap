@@ -39,7 +39,7 @@ export default function LoginForm({ discordEnabled }: { discordEnabled: boolean 
         </>
       ) : (
         <p className="rounded-md bg-red-500/10 px-3 py-2 text-sm text-red-300">
-          La connexion Discord n&apos;est pas configurée (AUTH_DISCORD_ID, AUTH_DISCORD_SECRET, DISCORD_GUILD_ID).
+          La connexion Discord n&apos;est pas configurée (DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_GUILD_ID).
         </p>
       )}
     </div>

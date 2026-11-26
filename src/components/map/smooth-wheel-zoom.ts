@@ -9,7 +9,7 @@ import L from "leaflet";
 /** Méthodes internes de L.Map utilisées (non typées par @types/leaflet). */
 type MapInternals = L.Map & {
   _stop(): void;
-  _move(center: L.LatLng, zoom: number): void;
+  _move(center: L.LatLng, zoom: number, data?: { pinch?: boolean; round?: boolean }): void;
   _moveStart(zoomChanged: boolean, noMoveStart: boolean): void;
   _moveEnd(zoomChanged: boolean): void;
   _panAnim?: { stop(): void };
@@ -76,7 +76,10 @@ export const SmoothWheelZoom = L.Handler.extend({
         map._moveStart(true, false);
         this._moved = true;
       }
-      map._move(center, next);
+      // { pinch: true } comme le zoom tactile de Leaflet : pendant le geste, les tuiles déjà affichées
+      // sont juste agrandies/réduites (pas de chargement ni de suppression à chaque image, sinon trous et
+      // clignotements quand on zoome vite). Les bonnes tuiles sont chargées à la fin (_moveEnd).
+      map._move(center, next, { pinch: true, round: false });
     } else if (this._idle) {
       return this._end();
     }
