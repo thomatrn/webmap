@@ -54,8 +54,10 @@ Scopes : `identify guilds.members.read`. **Aucun bot**, aucun salon utilisé.
 - Cookies de session `HttpOnly; Secure; SameSite=Lax`, contenu chiffré (il contient le jeton Discord).
 - Base : uniquement via Prisma (requêtes paramétrées), aucune requête SQL brute.
 - Aucun `child_process`, `eval`, ni appel réseau sortant autre que l'API Discord (`discord.com`).
-- Les outils de développement (`scripts/` : tuiles, île, catalogue) restent sur la machine du développeur et
-  ne sont pas dans le dépôt. Les fichiers qu'ils génèrent (tuiles, `src/lib/catalog.ts`) sont commités.
+- Les outils de développement (`scripts/` : tuiles, île) restent sur la machine du développeur et ne sont pas
+  dans le dépôt. Les tuiles qu'ils génèrent sont commitées.
+- Les labels des icônes (intérieurs, garages, entreprises) sont en base et se gèrent depuis `/admin/labels`.
+  La liste de départ est insérée par une migration.
 
 Une variante Docker (Dokploy) existe aussi : voir *Déploiement (Dokploy)* plus bas.
 

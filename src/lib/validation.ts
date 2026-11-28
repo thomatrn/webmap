@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { LABEL_GROUPS, type LabelGroup } from "./labels";
 import { MARKER_TYPES } from "./types";
 
 const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Couleur hex invalide");
@@ -44,3 +45,10 @@ export const markerCreateSchema = markerBase.extend({
   labels: markerBase.shape.labels.default([]),
 });
 export const markerUpdateSchema = markerBase.partial();
+
+const labelName = z.string().trim().min(1, "Nom requis").max(120);
+export const labelCreateSchema = z.object({
+  group: z.enum(LABEL_GROUPS.map((g) => g.key) as [LabelGroup, ...LabelGroup[]]),
+  name: labelName,
+});
+export const labelUpdateSchema = z.object({ name: labelName });

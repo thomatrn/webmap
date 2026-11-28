@@ -16,6 +16,6 @@ export default function Home() {
 
 async function MapWithData() {
   await connection(); // toujours rendu à la requête (données en DB)
-  const [size, { zones, markers }] = await Promise.all([getMapSize(), getMapData()]);
-  return <PublicMap size={size} zones={zones} markers={markers} />;
+  const [size, { zones, markers, labels }] = await Promise.all([getMapSize(), getMapData()]);
+  return <PublicMap size={size} zones={zones} markers={markers} labels={labels} />;
 }

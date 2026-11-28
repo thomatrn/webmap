@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { unstable_rethrow } from "next/navigation";
+import { Prisma } from "@prisma/client";
 import { ZodError } from "zod";
 import { isSameOrigin } from "./origin";
 import { getSession, type Session } from "./session";
@@ -37,6 +38,9 @@ export function handle<A extends [Request, ...unknown[]]>(fn: (...args: A) => Pr
       }
       if (err instanceof ZodError) {
         return NextResponse.json({ error: err.issues.map((i) => i.message).join(", ") }, { status: 400 });
+      }
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+        return NextResponse.json({ error: "Ce nom existe déjà" }, { status: 409 }); // contrainte unique
       }
       console.error(err);
       return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

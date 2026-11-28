@@ -30,12 +30,21 @@ model Marker {
   type        String   @default("house")
   /// "Garage lié" (garages et immeubles uniquement)
   linkedGarage Boolean @default(false)
-  /// Labels cochés (catalogue issu du seed intra-dynasty8), affichés au survol avant la description
+  /// Noms des labels cochés (voir Label), affichés au survol avant la description
   labels      String[] @default([])
   x           Float
   y           Float
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+/// Label cochable sur les icônes (intérieurs, garages, entreprises), géré depuis l'admin.
+model Label {
+  id    String @id @default(cuid())
+  /// interiors | garages | enterprises
+  group String
+  /// Unique : les icônes référencent les labels par leur nom
+  name  String @unique
 }
 
 model AuditLog {

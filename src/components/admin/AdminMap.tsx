@@ -11,6 +11,7 @@ import type { ShapeMode, Tool } from "../map/AdminTools";
 import { api, logout } from "./api-client";
 import { Button, Field, Input, Textarea } from "./ui";
 import LabelPicker from "./LabelPicker";
+import type { LabelDTO } from "@/lib/labels";
 
 // Geoman doit être chargé AVANT la création de la carte (il s'accroche à L.Map via un init hook).
 const MapView = dynamic(
@@ -29,6 +30,7 @@ type Props = {
   size: MapSize;
   initialZones: ZoneDTO[];
   initialMarkers: MarkerDTO[];
+  labels: LabelDTO[];
   username: string;
 };
 
@@ -51,7 +53,7 @@ const markerFields = (m: MarkerDTO) => ({
   labels: m.labels,
 });
 
-export default function AdminMap({ size, initialZones, initialMarkers, username }: Props) {
+export default function AdminMap({ size, initialZones, initialMarkers, labels, username }: Props) {
   const [zones, setZones] = useState(initialZones);
   const [markers, setMarkers] = useState(initialMarkers);
 
@@ -339,6 +341,9 @@ export default function AdminMap({ size, initialZones, initialMarkers, username 
             <Link href="/" target="_blank" prefetch={false} className="rounded-md px-2 py-1 text-xs text-neutral-400 hover:bg-white/5 hover:text-white">
               Carte ↗
             </Link>
+            <Link href="/admin/labels" className="rounded-md px-2 py-1 text-xs text-neutral-400 hover:bg-white/5 hover:text-white">
+              Labels
+            </Link>
             <Link href="/admin/logs" className="rounded-md px-2 py-1 text-xs text-neutral-400 hover:bg-white/5 hover:text-white">
               Logs
             </Link>
@@ -501,7 +506,7 @@ export default function AdminMap({ size, initialZones, initialMarkers, username 
                       : "affichés au survol"}
                   </span>
                 </span>
-                <LabelPicker value={markerDraft.labels} onChange={(labels) => setMarkerDraft({ ...markerDraft, labels })} />
+                <LabelPicker catalog={labels} value={markerDraft.labels} onChange={(labels) => setMarkerDraft({ ...markerDraft, labels })} />
               </div>
               <Field label="Description" hint="affichée après les labels">
                 <Textarea rows={3} value={markerDraft.description} onChange={(e) => setMarkerDraft({ ...markerDraft, description: e.target.value })} />

@@ -21,6 +21,6 @@ export default function AdminPage() {
 async function AdminWithData() {
   const session = await getSession();
   if (!session) redirect("/login?next=/admin");
-  const [size, { zones, markers }] = await Promise.all([getMapSize(), getMapData()]);
-  return <AdminMap size={size} initialZones={zones} initialMarkers={markers} username={session.username} />;
+  const [size, { zones, markers, labels }] = await Promise.all([getMapSize(), getMapData()]);
+  return <AdminMap size={size} initialZones={zones} initialMarkers={markers} labels={labels} username={session.username} />;
 }

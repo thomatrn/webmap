@@ -1,17 +1,28 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CATALOG, sortLabels } from "@/lib/catalog";
+import { LABEL_GROUPS, sortNames, type LabelDTO } from "@/lib/labels";
 import { Input } from "./ui";
 
-/** Sélection de labels du catalogue (intérieurs, garages, entreprises) par cases à cocher. */
-export default function LabelPicker({ value, onChange }: { value: string[]; onChange: (labels: string[]) => void }) {
+/** Sélection de labels (intérieurs, garages, entreprises) par cases à cocher. */
+export default function LabelPicker({
+  catalog,
+  value,
+  onChange,
+}: {
+  catalog: LabelDTO[];
+  value: string[];
+  onChange: (labels: string[]) => void;
+}) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const selected = useMemo(() => new Set(value), [value]);
 
   const q = query.trim().toLowerCase();
-  const groups = CATALOG.map((g) => ({ ...g, labels: q ? g.labels.filter((l) => l.toLowerCase().includes(q)) : g.labels })).filter(
+  const groups = LABEL_GROUPS.map((g) => {
+    const all = catalog.filter((l) => l.group === g.key).map((l) => l.name);
+    return { ...g, labels: q ? all.filter((l) => l.toLowerCase().includes(q)) : all };
+  }).filter(
     (g) => g.labels.length > 0,
   );
 
@@ -19,7 +30,7 @@ export default function LabelPicker({ value, onChange }: { value: string[]; onCh
     const next = new Set(selected);
     if (next.has(label)) next.delete(label);
     else next.add(label);
-    onChange(sortLabels([...next]));
+    onChange(sortNames([...next], catalog));
   };
 
   return (

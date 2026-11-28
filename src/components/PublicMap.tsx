@@ -7,6 +7,7 @@ import type { MapSize, MarkerDTO, MarkerType, ZoneDTO } from "@/lib/types";
 import { MARKER_LABELS, MARKER_TYPES } from "@/lib/types";
 import { MARKER_SVG } from "./map/icons-svg";
 import InteriorSearch from "./InteriorSearch";
+import type { LabelDTO } from "@/lib/labels";
 import type { FocusRequest } from "./map/MapFocus";
 
 const MapView = dynamic(() => import("./map/MapView"), { ssr: false, loading: () => <MapLoading /> });
@@ -22,14 +23,17 @@ export default function PublicMap({
   size,
   zones,
   markers,
+  labels,
 }: {
   size: MapSize;
   zones: ZoneDTO[];
   markers: MarkerDTO[];
+  labels: LabelDTO[];
 }) {
   const [hiddenTypes, setHiddenTypes] = useState<Set<MarkerType>>(new Set());
   const [hiddenCats, setHiddenCats] = useState<Set<string>>(new Set());
   const [panelOpen, setPanelOpen] = useState(true);
+  const interiors = useMemo(() => labels.filter((l) => l.group === "interiors").map((l) => l.name), [labels]);
   const [interior, setInterior] = useState<string | null>(null);
   const [pickedId, setPickedId] = useState<string | null>(null);
   const [focus, setFocus] = useState<FocusRequest>(null);
@@ -130,6 +134,7 @@ export default function PublicMap({
         {/* Recherche d'intérieur, sous la légende */}
         <InteriorSearch
           markers={markers}
+          interiors={interiors}
           selected={interior}
           onSelect={selectInterior}
           pickedId={pickedId}

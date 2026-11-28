@@ -1,12 +1,9 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { CATALOG } from "@/lib/catalog";
 import type { MarkerDTO } from "@/lib/types";
 import { MARKER_LABELS } from "@/lib/types";
 import { MARKER_SVG } from "./map/icons-svg";
-
-const INTERIORS = CATALOG.find((g) => g.key === "interiors")?.labels ?? [];
 
 /** Minuscules sans accents, pour une recherche tolérante ("meuble" trouve "Meublé"). */
 const norm = (s: string) =>
@@ -18,6 +15,8 @@ const norm = (s: string) =>
 
 type Props = {
   markers: MarkerDTO[];
+  /** Noms des intérieurs proposés (labels du groupe "interiors") */
+  interiors: string[];
   /** Intérieur sélectionné (filtre actif) */
   selected: string | null;
   onSelect: (interior: string | null) => void;
@@ -26,7 +25,7 @@ type Props = {
   pickedId: string | null;
 };
 
-export default function InteriorSearch({ markers, selected, onSelect, onPick, pickedId }: Props) {
+export default function InteriorSearch({ markers, interiors, selected, onSelect, onPick, pickedId }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -41,10 +40,10 @@ export default function InteriorSearch({ markers, selected, onSelect, onPick, pi
   // Suggestions : intérieurs disponibles sur la carte d'abord, puis les autres (grisés)
   const suggestions = useMemo(() => {
     const q = norm(query);
-    return INTERIORS.filter((i) => !q || norm(i).includes(q)).sort(
+    return interiors.filter((i) => !q || norm(i).includes(q)).sort(
       (a, b) => Number((counts.get(b) ?? 0) > 0) - Number((counts.get(a) ?? 0) > 0),
     );
-  }, [query, counts]);
+  }, [query, counts, interiors]);
 
   const results = useMemo(
     () => (selected ? markers.filter((m) => m.labels.includes(selected)) : []),

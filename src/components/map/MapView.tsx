@@ -6,7 +6,6 @@ import { useMemo, useRef, useState, type ReactNode } from "react";
 import { Marker, Popup, TileLayer, Polygon, Tooltip, ZoomControl } from "react-leaflet";
 import type { MapSize, MarkerDTO, ZoneDTO } from "@/lib/types";
 import { LINKED_GARAGE_TYPES, MARKER_LABELS } from "@/lib/types";
-import { sortLabels } from "@/lib/catalog";
 import { mapBounds, toLatLng, zoneStyle } from "./coords";
 import { markerIcon } from "./icons";
 import "./leaflet-patches";
@@ -225,9 +224,9 @@ function HoverMarker({
 }
 
 function MarkerCard({ m, expanded, onToggle }: { m: MarkerDTO; expanded: boolean; onToggle: () => void }) {
-  // Lignes affichées : labels cochés (ordre du catalogue), puis description saisie à la main (toujours en dernier).
+  // Lignes affichées : labels cochés (déjà triés à l'enregistrement), puis description saisie à la main (toujours en dernier).
   const descLines = m.description.trim() ? m.description.trim().split("\n") : [];
-  const allLabels = sortLabels(m.labels);
+  const allLabels = m.labels;
   const total = allLabels.length + descLines.length;
   const budget = expanded ? Infinity : MAX_LINES;
   const labels = allLabels.slice(0, budget);

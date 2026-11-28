@@ -48,5 +48,5 @@ prisma/*.db-journal
 prisma/*.backup
 prisma/sqlite-export.json
 
-# Outils de dev (tuiles, île, catalogue) : gardés en local, hors dépôt
+# Outils de dev (tuiles, île) : gardés en local, hors dépôt
 /scripts/
